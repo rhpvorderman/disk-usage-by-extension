@@ -42,18 +42,19 @@ def main():
     parser = argparse.ArgumentParser(__doc__)
     parser.add_argument("directory")
     args = parser.parse_args()
+    compressed_exts = ("gz", "bz2", "xz")
     size_by_extension = defaultdict(lambda: 0)
     for entry in iter_files(args.directory):
-        ext_start = entry.name.rfind(".")
-        if ext_start == -1:
-            extension = ""
+        name_parts = entry.name.rsplit(".", maxsplit=2)
+        if len(name_parts) == 1:
+            extension = "No extension"
+        elif len(name_parts) == 3 and name_parts[2] in compressed_exts:
+            extension = ".".join(name_parts[1:])
         else:
-            extension = entry.name[ext_start:]
+            extension = name_parts[-1]
         size = entry.stat().st_size
         size_by_extension[extension] += size
-    if "" in size_by_extension:
-        no_extension_size = size_by_extension.pop("")
-        size_by_extension["No extension"] = no_extension_size
+
     total_size = sum(size_by_extension.values())
     sorted_by_size = sorted(size_by_extension.items(),
                             key=lambda x: x[1],
