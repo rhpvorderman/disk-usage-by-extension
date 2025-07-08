@@ -29,6 +29,32 @@
 
 #define PATH_BUFFER_SIZE 1024
 
+static const char *extension_from_name(const char *name, size_t name_length) {
+    const char *extension = name + name_length;
+    while (extension > name) {
+        extension -= 1;
+        if (extension[0] == '.') {
+            int compressed_ext = (
+                strcmp(extension, ".gz") == 0 || 
+                strcmp(extension, ".bz2") == 0 || 
+                strcmp(extension, ".xz") == 0
+            );
+            if (!compressed_ext) {
+                return extension;
+            }
+            const char *before_gz_extension = extension - 1;
+            while (before_gz_extension > name) {
+                before_gz_extension -= 1;
+                if (before_gz_extension[0] == '.') {
+                    return before_gz_extension;
+                }
+            }
+            return extension;
+        }
+    }
+    return name + name_length;
+}
+
 static int recurse_directory(
     char *path_buffer, 
     size_t path_length, 
@@ -55,7 +81,8 @@ static int recurse_directory(
             continue;
         }
         if (d_type == DT_REG) {
-            printf("%s/%s\n", path_buffer, name);
+            size_t name_length = strlen(name);
+            const char *extension = extension_from_name(name, name_length);
             struct stat stat_result;
             int ret = fstatat(dirfd(dir_ptr), name, &stat_result, AT_SYMLINK_NOFOLLOW);
             if (ret != 0) {
@@ -63,6 +90,7 @@ static int recurse_directory(
                 closedir(dir_ptr);
                 return -1;
             }
+            printf("%s\n", extension);
             continue;
         }
         if (d_type == DT_DIR) {
