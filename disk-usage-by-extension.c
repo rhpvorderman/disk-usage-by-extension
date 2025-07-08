@@ -45,15 +45,17 @@ static int recurse_directory(
             break;
         }
         char *name = entry->d_name;
+        unsigned char d_type = entry->d_type;
+
         if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
             continue;
         }
 
-        if (entry->d_type == DT_LNK) {
+        if (d_type == DT_LNK) {
             continue;
         }
-        if (entry->d_type == DT_REG) {
-            printf("%s/%s\n", path_buffer, entry->d_name);
+        if (d_type == DT_REG) {
+            printf("%s/%s\n", path_buffer, name);
             struct stat stat_result;
             int ret = fstatat(dirfd(dir_ptr), name, &stat_result, AT_SYMLINK_NOFOLLOW);
             if (ret != 0) {
@@ -63,8 +65,8 @@ static int recurse_directory(
             }
             continue;
         }
-        if (entry->d_type == DT_DIR) {
-            size_t name_length = strlen(entry->d_name);
+        if (d_type == DT_DIR) {
+            size_t name_length = strlen(name);
             size_t new_path_length = path_length + name_length + 1; 
             if (new_path_length > path_buffer_length) {
                 fprintf(stderr, "Path buffer size exceeded");
@@ -72,7 +74,7 @@ static int recurse_directory(
                 return -1;
             }
             path_buffer[path_length] = '/';
-            memcpy(path_buffer + path_length + 1, entry->d_name, name_length);
+            memcpy(path_buffer + path_length + 1, name, name_length);
             path_buffer[new_path_length] = 0;
             int err = recurse_directory(path_buffer, new_path_length, path_buffer_length);
             // Reset path again
