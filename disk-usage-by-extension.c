@@ -48,19 +48,19 @@ static int recurse_directory(
         if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
             continue;
         }
-        struct stat stat_result;
-        int ret = fstatat(dirfd(dir_ptr), name, &stat_result, AT_SYMLINK_NOFOLLOW);
-        if (ret != 0) {
-            fprintf(stderr, "Error statting file\n");
-            closedir(dir_ptr);
-            return -1;
-        }
 
         if (entry->d_type == DT_LNK) {
             continue;
         }
         if (entry->d_type == DT_REG) {
             printf("%s/%s\n", path_buffer, entry->d_name);
+            struct stat stat_result;
+            int ret = fstatat(dirfd(dir_ptr), name, &stat_result, AT_SYMLINK_NOFOLLOW);
+            if (ret != 0) {
+                fprintf(stderr, "Error statting file\n");
+                closedir(dir_ptr);
+                return -1;
+            }
             continue;
         }
         if (entry->d_type == DT_DIR) {
