@@ -25,7 +25,9 @@
 #include <errno.h>
 #include <string.h>
 
-int recurse_directory(
+#define PATH_BUFFER_SIZE 1024
+
+static int recurse_directory(
     char *path_buffer, 
     size_t path_length, 
     size_t path_buffer_length
@@ -55,16 +57,23 @@ int recurse_directory(
             size_t name_length = strlen(entry->d_name);
             size_t new_path_length = path_length + name_length + 1; 
             if (new_path_length > path_buffer_length) {
+                fprintf(stderr, "Path buffer size exceeded");
                 return -1;
             }
             path_buffer[path_length] = '/';
             memcpy(path_buffer + path_length + 1, entry->d_name, name_length);
             path_buffer[new_path_length] = 0;
-            recurse_directory(path_buffer, new_path_length, path_buffer_length);
+            int err = recurse_directory(path_buffer, new_path_length, path_buffer_length);
             // Reset path again
+            if (err != 0) {
+                closedir(dir_ptr);
+                return err;
+            }
             path_buffer[path_length] = 0;
         } 
     }
+    closedir(dir_ptr);
+    return 0;
 }
 
 
@@ -74,8 +83,14 @@ int main(int argc, char *argv []) {
         return 1;
     }
     char *directory = argv[1];
-    char path_buffer[1025];
-    memset(path_buffer, 0, 1024);
-    strncpy(path_buffer, directory, 1024);
-    return recurse_directory(path_buffer, strlen(directory), 1024);
+    size_t directory_path_len = strlen(directory);
+    if (directory_path_len > PATH_BUFFER_SIZE) {
+        fprintf(stderr, "Path too long.");
+        return -1;
+    }
+    // Make path buffer 1 greater for the terminating 0.
+    char path_buffer[PATH_BUFFER_SIZE + 1];
+    memset(path_buffer, 0, PATH_BUFFER_SIZE + 1);
+    memcpy(path_buffer, directory, directory_path_len);
+    return recurse_directory(path_buffer, directory_path_len, PATH_BUFFER_SIZE);
 }
