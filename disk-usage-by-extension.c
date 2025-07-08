@@ -20,6 +20,8 @@
 
 #define  _DEFAULT_SOURCE
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <dirent.h>
 #include <stdio.h>
 #include <errno.h>
@@ -46,6 +48,14 @@ static int recurse_directory(
         if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
             continue;
         }
+        struct stat stat_result;
+        int ret = fstatat(dirfd(dir_ptr), name, &stat_result, AT_SYMLINK_NOFOLLOW);
+        if (ret != 0) {
+            fprintf(stderr, "Error statting file\n");
+            closedir(dir_ptr);
+            return -1;
+        }
+
         if (entry->d_type == DT_LNK) {
             continue;
         }
@@ -58,6 +68,7 @@ static int recurse_directory(
             size_t new_path_length = path_length + name_length + 1; 
             if (new_path_length > path_buffer_length) {
                 fprintf(stderr, "Path buffer size exceeded");
+                closedir(dir_ptr);
                 return -1;
             }
             path_buffer[path_length] = '/';
