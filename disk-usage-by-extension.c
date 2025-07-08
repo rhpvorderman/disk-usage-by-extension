@@ -32,23 +32,23 @@ int recurse_directory(
 ) {
      DIR *dir_ptr = opendir(path_buffer);
      if (dir_ptr == NULL) {
-        printf(path_buffer);
+        fprintf(stderr, "Failed to open directory with error code: %d\n", errno);
         return -1;
      }
      while (1) {
         struct dirent *entry = readdir(dir_ptr);
+        if (entry == NULL) {
+            break;
+        }
         char *name = entry->d_name;
         if (strcmp(name, ".") == 0 || strcmp(name, "..") == 0) {
             continue;
-        }
-        if (entry == NULL) {
-            break;
         }
         if (entry->d_type == DT_LNK) {
             continue;
         }
         if (entry->d_type == DT_REG) {
-            printf(entry->d_name);
+            printf("%s/%s\n", path_buffer, entry->d_name);
             continue;
         }
         if (entry->d_type == DT_DIR) {
@@ -73,11 +73,9 @@ int main(int argc, char *argv []) {
         fprintf(stderr, "Only one argument must be used.");
         return 1;
     }
-    printf(argv[0]);
     char *directory = argv[1];
     char path_buffer[1025];
     memset(path_buffer, 0, 1024);
     strncpy(path_buffer, directory, 1024);
-    printf(path_buffer);
     return recurse_directory(path_buffer, strlen(directory), 1024);
 }
