@@ -60,12 +60,12 @@ static int recurse_directory(
     size_t path_length, 
     size_t path_buffer_length
 ) {
-     DIR *dir_ptr = opendir(path_buffer);
-     if (dir_ptr == NULL) {
+    DIR *dir_ptr = opendir(path_buffer);
+    if (dir_ptr == NULL) {
         fprintf(stderr, "Failed to open directory with error code: %d\n", errno);
         return -1;
-     }
-     while (1) {
+    }
+    while (1) {
         struct dirent *entry = readdir(dir_ptr);
         if (entry == NULL) {
             break;
@@ -95,7 +95,7 @@ static int recurse_directory(
         }
         if (d_type == DT_DIR) {
             size_t name_length = strlen(name);
-            size_t new_path_length = path_length + name_length + 1; 
+            size_t new_path_length = path_length + name_length + 1;
             if (new_path_length > path_buffer_length) {
                 fprintf(stderr, "Path buffer size exceeded");
                 closedir(dir_ptr);
@@ -111,7 +111,7 @@ static int recurse_directory(
                 return err;
             }
             path_buffer[path_length] = 0;
-        } 
+        }
     }
     closedir(dir_ptr);
     return 0;
